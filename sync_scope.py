@@ -11,13 +11,14 @@ gpsData = None
 
 GPS_TIME = 0
 PC_TIME = 1
+TIMEOUT = 10
 
 def connectScope():
 	x = win32com.client.Dispatch("ASCOM.Utilities.Chooser")
 	x.DeviceType = "Telescope"
 	device = x.Choose(None)
-	tel = win32com.client.Dispatch(device)
 	try:
+		tel = win32com.client.Dispatch(device)
 		tel.Connected = True
 		return tel
 	except:
@@ -41,7 +42,7 @@ def connectGPS():
 		port_num = int(input("Select GPS Port #:"))-1
 		try:
 			GPS_PORT = ports[port_num]
-			gps = Serial(GPS_PORT)
+			gps = Serial(GPS_PORT, timeout=TIMEOUT)
 		except IndexError:
 			print("*** Error - invalid selection ***")
 			continue
