@@ -20,4 +20,4 @@ tel.UTCDate = pyTime(gmtime())
 print(tel.UTCDate)
 
 #tel.SlewToCoordinates(12.34, 86.7)
-tel.Connected = False
+#tel.Connected = False
