@@ -11,10 +11,15 @@ x = win32com.client.Dispatch("ASCOM.Utilities.Chooser")
 x.DeviceType = "Telescope"
 device = x.Choose(None)
 tel = win32com.client.Dispatch(device)
-tel.Connected = True
+try:
+	tel.Connected = True
+except:
+	print("")
+	print("*** Error opening telescope ***")
+	print("")
+	exit(1)
 
-# Establish GPS
-
+# Connect to GPS
 ports = serial_ports()
 gps = None
 while gps is None:
@@ -45,7 +50,7 @@ myGPS = MicropyGPS()
 #  Altitude is not available in all NMEA sentences and is not returned by BT GPS app
 #  Intent of iter_n variable is to limit number of iterations while ensuring all variables are set
 iter_n = 0
-MAX_ITER = 25
+MAX_ITER = 50
 loop = True
 while loop: 
 	gps_data = gps.readline().decode("utf-8").rstrip()
