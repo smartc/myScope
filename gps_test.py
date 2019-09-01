@@ -1,8 +1,10 @@
 from micropyGPS import MicropyGPS
 from serial import Serial
+from serial_tools import serial_ports
 import win32com.client
 from pytz import UTC
 from datetime import datetime
+from sys import exit
 
 
 x = win32com.client.Dispatch("ASCOM.Utilities.Chooser")
@@ -12,19 +14,61 @@ tel = win32com.client.Dispatch(device)
 tel.Connected = True
 
 # Establish GPS
-GPS_PORT = 'COM4'
-gps = Serial(GPS_PORT)
+
+ports = serial_ports()
+gps = None
+while gps is None:
+	print("+------------------------------------+")
+	print("| Available serial ports             |")
+	print("+------------------------------------+")
+
+	n=1
+	for p in ports:
+		print("| {:>2}) {:10}                     +".format(n,p))
+		n =n + 1
+	print("+------------------------------------+")
+	port_num = int(input("Select GPS Port #:"))-1
+	try:
+		GPS_PORT = ports[port_num]
+		gps = Serial(GPS_PORT)
+	except IndexError:
+		print("*** Error - invalid selection ***")
+		continue
+	except:
+		print("*** Error opening com port {} ***".format(GPS_PORT))
+		tel.Connected = False
+		exit(1)
 
 myGPS = MicropyGPS()
 
 # Retrieve GPS position data
-while myGPS.valid == False or myGPS.latitude == [0, 0.0, 'N']:
+#  Altitude is not available in all NMEA sentences and is not returned by BT GPS app
+#  Intent of iter_n variable is to limit number of iterations while ensuring all variables are set
+iter_n = 0
+MAX_ITER = 25
+loop = True
+while loop: 
 	gps_data = gps.readline().decode("utf-8").rstrip()
 	for x in gps_data:
 		myGPS.update(x)
+	loop = (myGPS.valid == False or myGPS.latitude == [0, 0.0, 'N'] or myGPS.altitude == 0.0)
+	iter_n = iter_n + 1
+	if iter_n >= MAX_ITER:
+		if myGPS.valid == False:
+			print("")
+			print("*** No GPS Fix ***")
+			print("")
+			tel.Connected = False
+			exit(1)
+		else:
+			print("")
+			print("*** Caution: Some GPS data may be invalid ***")
+			print("***          Please validate settings     ***")
+			print("")
+			loop = False
 
 # Set Telescope Date/Time
-d = UTC.localize(datetime(myGPS.date[0], myGPS.date[1], myGPS.date[2],\
+d = UTC.localize(datetime(myGPS.date[2], myGPS.date[1], myGPS.date[0],\
  myGPS.timestamp[0], myGPS.timestamp[1], int(myGPS.timestamp[2])))
 tel.UTCDate = d
 
@@ -41,10 +85,13 @@ tel.SiteLatitude = gps_lat
 tel.SiteLongitude = gps_lon
 tel.SiteElevation = myGPS.altitude
 
+print("")
 print("+-------------------------------------------------+")
-print("| Site Latitude          |  {:<+9.4f}             |".format(tel.SiteLatitude))
-print("| Site Longitude         |  {:<+9.4f}             |".format(tel.SiteLongitude))
-print("| Site Elevation         |  {:<+7.2f}               |".format(tel.SiteElevation))
+print("| New Telescope Position Data                     |")
+print("+-------------------------------------------------+")
+print("| Site Latitude          |  {:<+10.4f}            |".format(tel.SiteLatitude))
+print("| Site Longitude         |  {:<+10.4f}            |".format(tel.SiteLongitude))
+print("| Site Elevation (m)     |  {:<+10.2f}            |".format(tel.SiteElevation))
 print("| Scope Date             |  {:%Y/%m/%d}            |".format(tel.UTCDate))
 print("| Scope Time             |  {:%H:%M:%S}              |".format(tel.UTCDate))
 print("+-------------------------------------------------+")
