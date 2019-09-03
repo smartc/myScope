@@ -31,7 +31,7 @@ class comPortDialog(tk.Toplevel):
 		self.wait_window()
 		return self.selected_port.get()
 
-class Example(tk.Frame):
+class Primary(tk.Frame):
 
 	def __init__(self, parent):
 		tk.Frame.__init__(self,parent)
