@@ -1,23 +1,23 @@
 from micropyGPS import MicropyGPS
 from serial import Serial
 from serial_tools import serial_ports
-import win32com.client
+#import win32com.client
 from pytz import UTC
 from datetime import datetime
 from sys import exit
 
 
-x = win32com.client.Dispatch("ASCOM.Utilities.Chooser")
-x.DeviceType = "Telescope"
-device = x.Choose(None)
-tel = win32com.client.Dispatch(device)
-try:
-	tel.Connected = True
-except:
-	print("")
-	print("*** Error opening telescope ***")
-	print("")
-	exit(1)
+#x = win32com.client.Dispatch("ASCOM.Utilities.Chooser")
+#x.DeviceType = "Telescope"
+#device = x.Choose(None)
+#tel = win32com.client.Dispatch(device)
+#try:
+#	tel.Connected = True
+#except:
+#	print("")
+#	print("*** Error opening telescope ***")
+#	print("")
+#	exit(1)
 
 # Connect to GPS
 ports = serial_ports()
@@ -63,7 +63,7 @@ while loop:
 			print("")
 			print("*** No GPS Fix ***")
 			print("")
-			tel.Connected = False
+#			tel.Connected = False
 			exit(1)
 		else:
 			print("")
@@ -75,7 +75,7 @@ while loop:
 # Set Telescope Date/Time
 d = UTC.localize(datetime(myGPS.date[2], myGPS.date[1], myGPS.date[0],\
  myGPS.timestamp[0], myGPS.timestamp[1], int(myGPS.timestamp[2])))
-tel.UTCDate = d
+#tel.UTCDate = d
 
 # Set Telescope Position, Altitude
 gps_lat = myGPS.latitude[0] + myGPS.latitude[1]/60
@@ -86,19 +86,19 @@ gps_lon = myGPS.longitude[0] + myGPS.longitude[1]/60
 if myGPS.longitude[2] == "W":
 	gps_lon = -gps_lon
 
-tel.SiteLatitude = gps_lat
-tel.SiteLongitude = gps_lon
-tel.SiteElevation = myGPS.altitude
+#tel.SiteLatitude = gps_lat
+#tel.SiteLongitude = gps_lon
+#tel.SiteElevation = myGPS.altitude
 
 print("")
 print("+-------------------------------------------------+")
 print("| New Telescope Position Data                     |")
 print("+-------------------------------------------------+")
-print("| Site Latitude          |  {:<+10.4f}            |".format(tel.SiteLatitude))
-print("| Site Longitude         |  {:<+10.4f}            |".format(tel.SiteLongitude))
-print("| Site Elevation (m)     |  {:<+10.2f}            |".format(tel.SiteElevation))
-print("| Scope Date             |  {:%Y/%m/%d}            |".format(tel.UTCDate))
-print("| Scope Time             |  {:%H:%M:%S}              |".format(tel.UTCDate))
+print("| Site Latitude          |  {:<+10.4f}            |".format(gps_lat))
+print("| Site Longitude         |  {:<+10.4f}            |".format(gps_lon))
+print("| Site Elevation (m)     |  {:<+10.2f}            |".format(myGPS.altitude))
+print("| Scope Date             |  {:%Y/%m/%d}            |".format(d))
+print("| Scope Time             |  {:%H:%M:%S}              |".format(d))
 print("+-------------------------------------------------+")
 
-tel.Connected = False
+#tel.Connected = False
