@@ -54,6 +54,7 @@ MAX_ITER = 50
 loop = True
 while loop: 
 	gps_data = gps.readline().decode("utf-8").rstrip()
+	print("GPS DATA: {}".format(gps_data))
 	for x in gps_data:
 		myGPS.update(x)
 	loop = (myGPS.valid == False or myGPS.latitude == [0, 0.0, 'N'] or myGPS.altitude == 0.0)

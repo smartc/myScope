@@ -135,18 +135,17 @@ class GpsFrame(tk.Frame):
 		date2.grid(row=4, column=0, sticky="ew")
 
 		#setup GPS data panel
-
-		self.lat = tk.Label(parent, text="", font=FONT, relief="groove", padx=3, pady=3)
-		self.lon = tk.Label(parent, text="", font=FONT, relief="groove", padx=3, pady=3)
-		self.alt = tk.Label(parent, text="", font=FONT, relief="groove", padx=3, pady=3)
+		self.lat = tk.Label(parent, text="          ", font=FONT, relief="groove", padx=3, pady=3)
+		self.lon = tk.Label(parent, text="          ", font=FONT, relief="groove", padx=3, pady=3)
+		self.alt = tk.Label(parent, text="          ", font=FONT, relief="groove", padx=3, pady=3)
 
 		self.time = Clock(parent, self.gps_date, " UTC")
 		self.time.configure(font=FONT, fg='blue', relief="groove", padx=3, pady=3)
-		self.time.configure(text="")
+		self.time.configure(text="          ")
 	
 		self.date = Clock(parent, self.gps_date, None, '%Y-%m-%d')
 		self.date.configure(font=FONT, fg='blue', relief="groove", padx=3, pady=3)
-		self.date.configure(text="")
+		self.date.configure(text="          ")
 
 		self.lat.grid(row=0, column=1, sticky="ew")
 		self.lon.grid(row=1, column=1, sticky="ew")
@@ -154,40 +153,56 @@ class GpsFrame(tk.Frame):
 		self.time.grid(row=3, column=1, sticky="ew")
 		self.date.grid(row=4, column=1, sticky="ew")
 
+
+	def select_port(self):
+		global app
+		port = comPortDialog(self).show()
+		if port == "None":
+			self.port = None
+			app.update_gps.configure(state=tk.DISABLED)
+		else:
+			self.port = port
+			print("New port = {}".format(self.port))
+			app.update_gps.configure(state=tk.NORMAL)
+
 	def connect_gps(self):
+		global app
 		if self.gps_connected:
 			self.gps.close()
 			self.gps_connected = False
+			app.change_serial.configure(state=tk.NORMAL)
 		else:
-			if self.port is None or self.port == "None":
-				self.port = comPortDialog(self).show()
-			if self.port is not None and self.port != "None":
+			if self.port is not None or self.port != "None":
+				app.change_serial.configure(state=tk.DISABLED)
+				app.update_gps.configure(text="Disconnect GPS")
 				self.update_gps_data()
 
 	def update_gps_data(self):
 		try:
-			self.gps = Serial(self.port)
+			self.gps = Serial(port = self.port, timeout = 0)
 			self.gps_connected = True
-			
+			print("Updating data from {}".format(self.port))
+
 			loop = True
 			iter = 1
 			MAX_ITER = 25
-
+ 
 			while loop:
 				self.gps_sentence = self.gps.readline().decode("utf-8").rstrip()
+				print("GPS DATA: {}".format(self.gps_sentence))
 				for x in self.gps_sentence:
 					self.gps_parser.update(x)
-					loop = (self.gps_parser.valid == False or self.gps_parser.latitude == [0, 0.0, 'N'] or self.gps_parser.altitude == 0.0)
-					if iter >= MAX_ITER:
-						loop = False
-					iter += 1
+				loop = (self.gps_parser.valid == False or self.gps_parser.latitude == [0, 0.0, 'N'] or self.gps_parser.altitude == 0.0)
+				if iter >= MAX_ITER:
+					loop = False
+				iter += 1
 
 			if iter >= MAX_ITER:
-				self.lat.configure(text = "** No Fix **")
-				self.lon.configure(text = "** No Fix **")
-				self.alt.configure(text = "** No Fix **")
-				self.time.configure(text = "** No Fix **")
-				self.date.configure(text = "** No Fix **")
+				self.lat.configure(text = "  ** No Fix **  ")
+				self.lon.configure(text = "  ** No Fix **  ")
+				self.alt.configure(text = "  ** No Fix **  ")
+				self.time.configure(text = "  ** No Fix **  ")
+				self.date.configure(text = "  ** No Fix **  ")
 				self.gps_valid = False
 			else:
 				self.gps_lat = self.gps_parser.latitude[0] + self.gps_parser.latitude[1]/60
@@ -198,7 +213,7 @@ class GpsFrame(tk.Frame):
 				if self.gps_parser.longitude[2] == "W":
 					self.gps_lon = -self.gps_lon
 
-				self.gps_date = UTC.localize(datetime(self.gps_parser.date[2], self.gps_parser.date[1], self.gps_parser.date[0],\
+				self.gps_date = UTC.localize(datetime(self.gps_parser.date[2] + 2000, self.gps_parser.date[1], self.gps_parser.date[0],\
 					self.gps_parser.timestamp[0], self.gps_parser.timestamp[1], int(self.gps_parser.timestamp[2])))
 
 				self.gps_alt = self.gps_parser.altitude
@@ -206,13 +221,16 @@ class GpsFrame(tk.Frame):
 				self.lat.configure(text="{:<+.4f} °".format(self.gps_lat))
 				self.lon.configure(text="{:<+.4f} °".format(self.gps_lon))
 				self.alt.configure(text="{:<+,.1f} m".format(int(self.gps_alt)))
+				
+				self.time.set(self.gps_date)
+				self.date.set(self.gps_date)
+				
 				self.time.tick()
 				self.date.tick('%Y-%m-%d')
+				
 				self.gps_valid = True
 		except:
 			raise
-
-
 
 
 class DataFrame(tk.Frame):
@@ -309,9 +327,11 @@ class DataFrame(tk.Frame):
 		self.btmFrame.grid_rowconfigure(1, weight=1)
 		self.btmFrame.grid_columnconfigure(1, weight=1)
 
-		gps_button = tk.Button(self.btmFrame, text="Connect GPS", command=app.gpsdata.connect_gps)
-		gps_button.grid(row=0,column=1, sticky="ne")
+		app.update_gps = tk.Button(self.btmFrame, text="Get GPS Data", command=app.gpsdata.connect_gps, state=tk.DISABLED)
+		app.update_gps.grid(row=0,column=1, sticky="ne")
 
+		app.change_serial = tk.Button(self.btmFrame, text="Config Serial", command=app.gpsdata.select_port)
+		app.change_serial.grid(row=0,column=0, sticky="ne")
 
 if __name__ == "__main__":
 	global app
