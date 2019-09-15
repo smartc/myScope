@@ -172,14 +172,14 @@ class GpsFrame(tk.Frame):
 			self.gps_connected = False
 			app.change_serial.configure(state=tk.NORMAL)
 		else:
-			if self.port is not None or self.port != "None":
+			if self.port is not None and self.port != "None":
 				app.change_serial.configure(state=tk.DISABLED)
 				app.update_gps.configure(text="Disconnect GPS")
 				self.update_gps_data()
 
 	def update_gps_data(self):
 		try:
-			self.gps = Serial(port = self.port, timeout = 0)
+			self.gps = Serial(port = self.port, timeout = 5)
 			self.gps_connected = True
 			print("Updating data from {}".format(self.port))
 
