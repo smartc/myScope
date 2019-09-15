@@ -177,10 +177,10 @@ class GpsFrame(tk.Frame):
 				self.gps_sentence = self.gps.readline().decode("utf-8").rstrip()
 				for x in self.gps_sentence:
 					self.gps_parser.update(x)
-					loop = (self.gps_parser.valid == False or self.gps_parser.latitude == [0, 0.0, 'N'] or self.gps_parser.altitude == 0.0)
-					if iter >= MAX_ITER:
-						loop = False
-					iter += 1
+				loop = (self.gps_parser.valid == False or self.gps_parser.latitude == [0, 0.0, 'N'] or self.gps_parser.altitude == 0.0)
+				if iter >= MAX_ITER:
+					loop = False
+				iter += 1
 
 			if iter >= MAX_ITER:
 				self.lat.configure(text = "** No Fix **")
