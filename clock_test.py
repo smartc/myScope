@@ -175,16 +175,18 @@ class GpsFrame(tk.Frame):
 
 	def update_gps_data(self):
 		try:
-			self.gps = Serial(port = self.port, timeout = 5)
+			self.gps = Serial(port = self.port, timeout = 1)
 			self.gps_connected = True
 			print("Updating data from {}".format(self.port))
-			self.gps_parser = MicropyGPS()
-			loop = True
+			self.gps_parser = MicropyGPS()  					## Reinitatialize to ensure that all data is read from the GPS in loop below
+			
+			loop = True											## Variables used for iteration thru GPS sentences
 			iter = 1
 			MAX_ITER = 25
  
-			self.gps.flush()
-			while loop:
+			self.gps.flush()									## Flush the serial buffer before we read new data
+
+			while loop:											## Begin looping through GPS sentence until we have all data populated or we have reached MAX_ITER
 				self.gps_sentence = self.gps.readline().decode("utf-8").rstrip()
 				print("GPS DATA: {}".format(self.gps_sentence))
 				for x in self.gps_sentence:
@@ -194,14 +196,14 @@ class GpsFrame(tk.Frame):
 					loop = False
 				iter += 1
 
-			if iter >= MAX_ITER:
+			if iter >= MAX_ITER:								## We ran out of iterations - assume the data is no good (may fail with some GPS units if not all data is returned)
 				self.lat.configure(text = "  ** No Fix **  ")
 				self.lon.configure(text = "  ** No Fix **  ")
 				self.alt.configure(text = "  ** No Fix **  ")
 				self.time.configure(text = "  ** No Fix **  ")
 				self.date.configure(text = "  ** No Fix **  ")
 				self.gps_valid = False
-			else:
+			else:												## We've got all the data, so load it into our data frame
 				self.gps_lat = self.gps_parser.latitude[0] + self.gps_parser.latitude[1]/60
 				if self.gps_parser.latitude[2] == "S":
 					self.gps_lat = -self.gps_lat
