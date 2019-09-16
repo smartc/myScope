@@ -167,26 +167,23 @@ class GpsFrame(tk.Frame):
 
 	def connect_gps(self):
 		global app
-		if self.gps_connected:
+		if self.port is not None and self.port != "None":
+			#app.change_serial.configure(state=tk.DISABLED)
+			#app.update_gps.configure(text="Disconnect GPS")
+			self.update_gps_data()
 			self.gps.close()
-			self.gps_connected = False
-			app.change_serial.configure(state=tk.NORMAL)
-		else:
-			if self.port is not None and self.port != "None":
-				app.change_serial.configure(state=tk.DISABLED)
-				app.update_gps.configure(text="Disconnect GPS")
-				self.update_gps_data()
 
 	def update_gps_data(self):
 		try:
 			self.gps = Serial(port = self.port, timeout = 5)
 			self.gps_connected = True
 			print("Updating data from {}".format(self.port))
-
+			self.gps_parser = MicropyGPS()
 			loop = True
 			iter = 1
 			MAX_ITER = 25
  
+			self.gps.flush()
 			while loop:
 				self.gps_sentence = self.gps.readline().decode("utf-8").rstrip()
 				print("GPS DATA: {}".format(self.gps_sentence))
@@ -327,10 +324,10 @@ class DataFrame(tk.Frame):
 		self.btmFrame.grid_rowconfigure(1, weight=1)
 		self.btmFrame.grid_columnconfigure(1, weight=1)
 
-		app.update_gps = tk.Button(self.btmFrame, text="Get GPS Data", command=app.gpsdata.connect_gps, state=tk.DISABLED)
+		app.update_gps = tk.Button(self.btmFrame, text="Get GPS", command=app.gpsdata.connect_gps, state=tk.DISABLED)
 		app.update_gps.grid(row=0,column=1, sticky="ne")
 
-		app.change_serial = tk.Button(self.btmFrame, text="Config Serial", command=app.gpsdata.select_port)
+		app.change_serial = tk.Button(self.btmFrame, text="Config GPS", command=app.gpsdata.select_port)
 		app.change_serial.grid(row=0,column=0, sticky="ne")
 
 if __name__ == "__main__":
