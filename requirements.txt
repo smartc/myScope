@@ -1,4 +1,4 @@
 micropyGPS==1.0
 pyserial==3.4
 pytz==2019.2
-pywin32==224
+pywin32==301
